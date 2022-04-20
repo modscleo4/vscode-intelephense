@@ -1,4 +1,4 @@
-/* Copyright (c) Ben Robert Mewburn 
+/* Copyright (c) Ben Robert Mewburn
  * Licensed under the MIT Licence.
  */
 'use strict';
@@ -20,6 +20,7 @@ import {
 } from 'vscode-languageclient/node';
 import { createMiddleware, IntelephenseMiddleware } from './middleware';
 import * as fs from 'fs-extra';
+import { PhpInlayHintsProvider } from './inlayHintsProvider';
 
 const PHP_LANGUAGE_ID = 'php';
 const VERSION = '1.8.2';
@@ -87,7 +88,7 @@ export async function activate(context: ExtensionContext) {
 
 	middleware = createMiddleware();
 	languageClient = createClient(context, middleware, clearCache);
-	
+
 	let indexWorkspaceCmdDisposable = commands.registerCommand(INDEX_WORKSPACE_CMD_NAME, indexWorkspace);
 	let cancelIndexingCmdDisposable = commands.registerCommand(CANCEL_INDEXING_CMD_NAME, cancelIndexing);
 	let enterKeyCmdDisposable = commands.registerCommand(ENTER_KEY_CMD_NAME, () => enterLicenceKey(context));
@@ -101,6 +102,15 @@ export async function activate(context: ExtensionContext) {
 	);
 
 	clientDisposable = languageClient.start();
+
+	languageClient.onReady().then(() => {
+		if (languages.registerInlayHintsProvider) {
+			context.subscriptions.push(languages.registerInlayHintsProvider([
+				{ scheme: "file", language: "php", pattern: "**/*.php" },
+				{ scheme: "untitled", language: "php", pattern: "**/*.php" }
+			], new PhpInlayHintsProvider(languageClient)));
+		}
+	});
 }
 
 function createClient(context:ExtensionContext, middleware:IntelephenseMiddleware, clearCache:boolean) {
@@ -177,7 +187,7 @@ function showStartMessage(context: ExtensionContext) {
 	}
 	window.showInformationMessage(
 		`Intelephense updated to ${VERSION}.\nSupport the development of this extension and access other great features by purchasing a licence at https://intelephense.com.`,
-		open, 
+		open,
 		dismiss
 	).then(value => {
 		if(value === open) {
@@ -211,7 +221,7 @@ function cancelIndexing() {
 }
 
 function enterLicenceKey(context:ExtensionContext) {
-	
+
 	let currentValue = context.globalState.get<string>(LICENCE_MEMENTO_KEY);
 	let options:InputBoxOptions = {
 		prompt: 'Intelephense Licence Key',
@@ -241,7 +251,7 @@ function enterLicenceKey(context:ExtensionContext) {
                     window.showErrorMessage('Key could not be activated at this time. Please contact support.');
                 }
             }
-            
+
             //restart
             if(languageClient && clientDisposable) {
                 await languageClient.stop();

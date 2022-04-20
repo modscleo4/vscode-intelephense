@@ -13,7 +13,8 @@ const config = {
     path: path.resolve(__dirname, 'lib'),
     filename: 'extension.js',
     libraryTarget: 'commonjs2',
-    devtoolModuleFilenameTemplate: '../[resource-path]'
+    devtoolModuleFilenameTemplate: '../[resource-path]',
+    hashFunction: 'xxhash64'
   },
   devtool: 'source-map',
   externals: {
